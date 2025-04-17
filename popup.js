@@ -11,17 +11,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let reverse = false;
 
-  // restore mode/value/base/output
-  chrome.storage.local.get(["reverse", "value", "base", "output"], (data) => {
-    if (typeof data.reverse === "boolean") reverse = data.reverse;
-    updateModeUI();
-    if (data.value) valueInput.value = data.value;
-    if (data.base) baseInput.value = data.base;
-    if (data.output) {
-      resultSpan.textContent = data.output;
-      resultContainer.classList.remove("hidden");
-    }
-  });
+  const toVW = (px, base) =>
+    ((px / base) * 100).toFixed(2).replace(/\.?0+$/, "") + "vw";
+
+  const toPX = (vw, base) =>
+    ((vw / 100) * base).toFixed(2).replace(/\.?0+$/, "") + "px";
+
+  function selectText(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
 
   function updateModeUI() {
     if (reverse) {
@@ -33,37 +35,52 @@ document.addEventListener("DOMContentLoaded", () => {
       valueInput.placeholder = "Pixels (px)";
       convertBtn.textContent = "Convert to VW";
     }
-    resultContainer.classList.add("hidden");
   }
+
+  function calculate() {
+    const val = parseFloat(valueInput.value);
+    const base = parseFloat(baseInput.value);
+    if (isNaN(val) || isNaN(base) || base === 0) {
+      resultContainer.classList.add("hidden");
+      return;
+    }
+    const output = reverse ? toPX(val, base) : toVW(val, base);
+    resultSpan.textContent = output;
+    resultContainer.classList.remove("hidden");
+    chrome.storage.local.set({
+      reverse,
+      value: valueInput.value,
+      base: baseInput.value,
+      output,
+    });
+  }
+
+  // restore state
+  chrome.storage.local.get(["reverse", "value", "base", "output"], (data) => {
+    if (typeof data.reverse === "boolean") reverse = data.reverse;
+    updateModeUI();
+    if (data.value) valueInput.value = data.value;
+    if (data.base) baseInput.value = data.base;
+    if (data.output) {
+      resultSpan.textContent = data.output;
+      resultContainer.classList.remove("hidden");
+    }
+  });
 
   toggleBtn.addEventListener("click", () => {
     reverse = !reverse;
     chrome.storage.local.set({ reverse });
     updateModeUI();
+    calculate();
   });
 
-  convertBtn.addEventListener("click", () => {
-    const val = parseFloat(valueInput.value);
-    const base = parseFloat(baseInput.value);
-    if (isNaN(val) || isNaN(base) || base === 0) return;
+  convertBtn.addEventListener("click", calculate);
 
-    const output = reverse
-      ? ((val / 100) * base).toFixed(2).replace(/\.?0+$/, "") + "px"
-      : ((val / base) * 100).toFixed(2).replace(/\.?0+$/, "") + "vw";
-
-    resultSpan.textContent = output;
-    resultContainer.classList.remove("hidden");
-
-    chrome.storage.local.set({
-      value: valueInput.value,
-      base: baseInput.value,
-      output,
-    });
-  });
-
-  const copyResult = () =>
+  const copyAndSelect = () => {
+    selectText(resultSpan);
     navigator.clipboard.writeText(resultSpan.textContent);
+  };
 
-  resultSpan.addEventListener("click", copyResult);
-  copyBtn.addEventListener("click", copyResult);
+  resultSpan.addEventListener("click", copyAndSelect);
+  copyBtn.addEventListener("click", copyAndSelect);
 });
