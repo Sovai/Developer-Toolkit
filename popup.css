@@ -1,109 +1,171 @@
-/* popup.css */
+:root {
+  --fg-primary: #077a7d;
+  --fg-primary-hover: #005048;
+  --bg-page: #f3f4f6;
+  --bg-card: #ffffff;
+  --fg-text: #111827;
+  --fg-muted: #6b7280;
+  --border: #d1d5db;
+  --bg-input: #f9fafb;
+  --bg-hover: #eef2ff;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --radius: 8px;
+  --gap: 12px;
+  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+}
 
 body {
   margin: 0;
-  font-family: sans-serif;
-  width: 240px;
-  overflow: hidden;
+  padding: 0;
+  background: var(--bg-page);
+  font-family: var(--font);
 }
 
 .container {
-  padding: 12px;
+  background: var(--bg-card);
+  border-radius: calc(var(--radius) * 1.5);
+  box-shadow: 0 4px 14px var(--shadow);
+  padding: var(--gap);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gap);
+  width: 280px;
 }
+
 h1 {
-  font-size: 16px;
   margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--fg-text);
 }
 
 label {
   display: block;
-  margin-bottom: 2px;
-  font-size: 10px;
-  color: #333;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
 }
 
 input {
-  padding: 8px;
-  font-size: 14px;
   width: 100%;
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--fg-text);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   box-sizing: border-box;
-  border-radius: 4px;
-  border: 1px solid #ccc;
 }
 
-button {
-  padding: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 4px;
-  border: none;
-  background-color: #f0f0f0;
-  transition: background-color 0.3s;
-  color: #333;
-  &:hover {
-    background-color: #e0e0e0;
-  }
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 109, 91, 0.3);
 }
 
 .buttonWrapper {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 #convertBtn {
   flex: 1;
+  background: var(--fg-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-#toggleBtn {
-  width: 40px; /* square size */
-  aspect-ratio: 1; /* maintain 1:1 */
+#convertBtn:hover {
+  background: var(--fg-primary-hover);
+}
+
+#toggleBtn,
+#clearBtn {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0; /* optional, to keep icon centered */
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-/* result area */
+#toggleBtn:hover,
+#clearBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--fg-primary);
+}
+
+/* result container with transition */
 #resultContainer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 4px 0;
+  gap: var(--gap);
+  margin-top: var(--gap);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* hide entire result block when .hidden */
+#resultContainer.hidden {
+  display: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+/* result value styling: only when non-empty */
 #vwResult {
   flex: 1;
-  user-select: all;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--fg-primary);
+  background: transparent;
+  border: 2px solid var(--fg-primary);
+  border-radius: 9999px;
+  padding: 0.4rem 0.8rem;
+  text-align: center;
   cursor: pointer;
-  font-size: 18px;
+  user-select: all;
 }
 
-/* copy button */
+#vwResult:not(:empty) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem;
+}
+
+/* copy button: hide when no result, animate */
 #copyBtn {
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  cursor: pointer;
+  opacity: 1;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s ease;
 }
+
 #copyBtn:hover {
-  background-color: #e0e0e0;
-  border-radius: 4px;
+  background: var(--bg-hover);
+  border-color: var(--fg-primary);
 }
 
-#copyBtn svg {
-  width: 16px;
-  height: 16px;
+#resultContainer.hidden #copyBtn {
+  opacity: 0;
   pointer-events: none;
-}
-
-.hidden {
-  display: none;
 }

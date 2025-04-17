@@ -1,10 +1,10 @@
-// popup.js
 document.addEventListener("DOMContentLoaded", () => {
   const valueLabel = document.getElementById("valueLabel");
   const valueInput = document.getElementById("valueInput");
   const baseInput = document.getElementById("vwBaseInput");
   const convertBtn = document.getElementById("convertBtn");
   const toggleBtn = document.getElementById("toggleBtn");
+  const clearBtn = document.getElementById("clearBtn");
   const resultContainer = document.getElementById("resultContainer");
   const resultSpan = document.getElementById("vwResult");
   const copyBtn = document.getElementById("copyBtn");
@@ -74,6 +74,22 @@ document.addEventListener("DOMContentLoaded", () => {
     calculate();
   });
 
+  clearBtn.addEventListener("click", () => {
+    // reset input
+    valueInput.value = null;
+    baseInput.value = null;
+
+    // set result to 0 + current unit
+    const unit = reverse ? "px" : "vw";
+    resultSpan.textContent = `0${unit}`;
+    resultContainer.classList.remove("hidden");
+    // persist clear
+    chrome.storage.local.set({
+      value: null,
+      base: null,
+      output: null,
+    });
+  });
   convertBtn.addEventListener("click", calculate);
 
   const copyAndSelect = () => {
