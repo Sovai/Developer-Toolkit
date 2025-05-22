@@ -4,42 +4,142 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="popup.css" />
-    <title>PX ↔ VW Converter</title>
+    <title>Timestamp Preview</title>
   </head>
   <body>
     <div class="container">
-      <h1>PX ↔ VW Converter</h1>
-
-
-
+      <div class="nav-header">
+        <h1>Timestamp Preview</h1>
+        <div class="nav-links">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="pxvw.html" class="nav-link">PX ↔ VW</a>
+          <a href="credentials.html" class="nav-link">Credentials</a>
+          <a href="popup.html" class="nav-link active">Timestamp</a>
+        </div>
+      </div>
       <div>
-        <label id="valueLabel" for="valueInput">Pixels (px)</label>
-        <input type="number" id="valueInput" placeholder="Pixels (px)" />
+        <label for="timestampInput">Enter Timestamps (one per line)</label>
+        <textarea
+          id="timestampInput"
+          placeholder="Enter timestamps (Unix, ISO, etc.)"
+          rows="5"
+        ></textarea>
       </div>
 
       <div>
-        <label for="vwBaseInput">Viewport Width (px)</label>
+        <label for="formatSelect">Format</label>
+        <select id="formatSelect">
+          <option value="default">Default (human-readable)</option>
+          <option value="iso">ISO 8601</option>
+          <option value="date">Date only</option>
+          <option value="time">Time only</option>
+          <option value="datetime-day">Date and time with day of week</option>
+          <option value="custom">Custom format</option>
+        </select>
+      </div>
+
+      <div id="customFormatContainer" class="hidden">
+        <label for="customFormatInput">Custom Format</label>
         <input
-          type="number"
-          id="vwBaseInput"
-          placeholder="Viewport width (px)"
+          type="text"
+          id="customFormatInput"
+          placeholder="e.g., YYYY-MM-DD (DAY) HH:mm:ss"
         />
       </div>
+
+      <div class="timezone-container">
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="useLocalTimezone" checked />
+          <label for="useLocalTimezone">Use local timezone</label>
+        </div>
+        <div id="customTimezoneContainer" class="hidden">
+          <label for="timezoneSelect">Select Timezone</label>
+          <select id="timezoneSelect">
+            <option value="-12:00">
+              (UTC-12:00) International Date Line West
+            </option>
+            <option value="-11:00">
+              (UTC-11:00) Coordinated Universal Time-11
+            </option>
+            <option value="-10:00">(UTC-10:00) Hawaii</option>
+            <option value="-09:00">(UTC-09:00) Alaska</option>
+            <option value="-08:00">
+              (UTC-08:00) Pacific Time (US & Canada)
+            </option>
+            <option value="-07:00">
+              (UTC-07:00) Mountain Time (US & Canada)
+            </option>
+            <option value="-06:00">
+              (UTC-06:00) Central Time (US & Canada)
+            </option>
+            <option value="-05:00">
+              (UTC-05:00) Eastern Time (US & Canada)
+            </option>
+            <option value="-04:00">(UTC-04:00) Atlantic Time (Canada)</option>
+            <option value="-03:00">(UTC-03:00) Brasilia</option>
+            <option value="-02:00">
+              (UTC-02:00) Coordinated Universal Time-02
+            </option>
+            <option value="-01:00">(UTC-01:00) Cape Verde Is.</option>
+            <option value="+00:00">
+              (UTC+00:00) London, Dublin, Edinburgh
+            </option>
+            <option value="+01:00">
+              (UTC+01:00) Berlin, Paris, Rome, Madrid
+            </option>
+            <option value="+02:00">
+              (UTC+02:00) Athens, Istanbul, Helsinki
+            </option>
+            <option value="+03:00">(UTC+03:00) Moscow, St. Petersburg</option>
+            <option value="+03:30">(UTC+03:30) Tehran</option>
+            <option value="+04:00">(UTC+04:00) Abu Dhabi, Dubai</option>
+            <option value="+04:30">(UTC+04:30) Kabul</option>
+            <option value="+05:00">(UTC+05:00) Islamabad, Karachi</option>
+            <option value="+05:30">(UTC+05:30) Chennai, Kolkata, Mumbai</option>
+            <option value="+05:45">(UTC+05:45) Kathmandu</option>
+            <option value="+06:00">(UTC+06:00) Astana, Dhaka</option>
+            <option value="+06:30">(UTC+06:30) Yangon (Rangoon)</option>
+            <option value="+07:00">(UTC+07:00) Bangkok, Hanoi, Jakarta</option>
+            <option value="+08:00">
+              (UTC+08:00) Beijing, Hong Kong, Singapore
+            </option>
+            <option value="+09:00">(UTC+09:00) Tokyo, Seoul, Osaka</option>
+            <option value="+09:30">(UTC+09:30) Adelaide, Darwin</option>
+            <option value="+10:00">
+              (UTC+10:00) Sydney, Melbourne, Brisbane
+            </option>
+            <option value="+11:00">(UTC+11:00) Vladivostok</option>
+            <option value="+12:00">(UTC+12:00) Auckland, Wellington</option>
+            <option value="+13:00">(UTC+13:00) Nuku'alofa</option>
+          </select>
+        </div>
+      </div>
+
       <div class="buttonWrapper">
-        <button id="convertBtn">Convert to VW</button>
-
-        <button id="toggleBtn" title="Toggle mode">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m15.167 1l.598 1.118c.404.755.606 1.133.472 1.295c-.133.162-.573.031-1.454-.23A9.8 9.8 0 0 0 12 2.78c-5.247 0-9.5 4.128-9.5 9.22a8.97 8.97 0 0 0 1.27 4.61M8.834 23l-.598-1.118c-.404-.756-.606-1.134-.472-1.295c.133-.162.573-.032 1.454.23c.88.261 1.815.402 2.783.402c5.247 0 9.5-4.128 9.5-9.22a8.97 8.97 0 0 0-1.27-4.609" color="currentColor"/></svg>
-        </button>
-
+        <button id="convertBtn">Convert Timestamps</button>
         <button id="clearBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 5L5 19M5 5l14 14" color="currentColor"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M19 5L5 19M5 5l14 14"
+              color="currentColor"
+            />
           </svg>
         </button>
       </div>
+
       <div id="resultContainer" class="hidden">
-        <span id="vwResult"></span>
-        <button id="copyBtn" title="Copy to clipboard">
+        <div id="resultsTable"></div>
+        <button id="copyBtn" title="Copy all results">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="32"
@@ -63,6 +163,7 @@
         </button>
       </div>
     </div>
+    <script src="nav.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

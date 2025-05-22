@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "PX to VW Converter",
-  "description": "Convert pixel values to viewport‑width units",
-  "version": "1.1",
-  "permissions": ["storage"],
+  "name": "Developer Toolkit",
+  "description": "Combined toolkit with timestamp converter, credentials manager, and PX ↔ VW converter.",
+  "version": "1.0",
+  "permissions": ["storage", "clipboardWrite"],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

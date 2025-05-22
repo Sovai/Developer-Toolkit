@@ -1,6 +1,6 @@
 :root {
-  --fg-primary: #077a7d;
-  --fg-primary-hover: #005048;
+  --fg-primary: #0d6efd;
+  --fg-primary-hover: #0a58ca;
   --bg-page: #f3f4f6;
   --bg-card: #ffffff;
   --fg-text: #111827;
@@ -30,7 +30,49 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  width: 280px;
+  width: 400px;
+}
+
+/* Updated navigation header and links */
+.nav-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--gap);
+  text-align: center;
+}
+
+.nav-links {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  background: var(--bg-input);
+  border-radius: 9999px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  width: fit-content;
+}
+
+.nav-link {
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--fg-primary);
+  background: var(--bg-hover);
+}
+
+.nav-link.active {
+  color: white;
+  background: var(--fg-primary);
 }
 
 h1 {
@@ -47,7 +89,9 @@ label {
   color: var(--fg-muted);
 }
 
-input {
+input,
+textarea,
+select {
   width: 100%;
   padding: 0.6rem;
   font-size: 0.875rem;
@@ -58,15 +102,28 @@ input {
   box-sizing: border-box;
 }
 
-input:focus {
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 109, 91, 0.3);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
 }
 
 .buttonWrapper {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
+  margin-top: calc(var(--gap) * 1.2);
+}
+
+.credential-form .buttonWrapper {
+  margin-bottom: 0;
+  margin-top: calc(var(--gap) * 1.2);
 }
 
 #convertBtn {
@@ -87,7 +144,8 @@ input:focus {
 }
 
 #toggleBtn,
-#clearBtn {
+#clearBtn,
+#copyBtn {
   width: 36px;
   height: 36px;
   background: var(--bg-input);
@@ -101,7 +159,8 @@ input:focus {
 }
 
 #toggleBtn:hover,
-#clearBtn:hover {
+#clearBtn:hover,
+#copyBtn:hover {
   background: var(--bg-hover);
   border-color: var(--fg-primary);
 }
@@ -111,42 +170,74 @@ input:focus {
   display: flex;
   align-items: center;
   gap: var(--gap);
-  margin-top: var(--gap);
   opacity: 1;
   transform: translateY(0);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 /* hide entire result block when .hidden */
-#resultContainer.hidden {
+#resultContainer.hidden,
+#customFormatContainer.hidden,
+#customTimezoneContainer.hidden {
   display: none;
   opacity: 0;
   transform: translateY(-6px);
   pointer-events: none;
 }
-/* result value styling: only when non-empty */
-#vwResult {
+
+#resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.result-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0;
+}
+
+.result-row:last-child {
+  border-bottom: none;
+}
+
+.timestamp-original {
   flex: 1;
-  font-size: 1rem;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.timestamp-formatted {
+  flex: 1;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--fg-primary);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copy-row-btn {
   background: transparent;
-  border: 2px solid var(--fg-primary);
-  border-radius: 9999px;
-  padding: 0.4rem 0.8rem;
-  text-align: center;
+  border: none;
   cursor: pointer;
-  user-select: all;
+  padding: 0 4px;
+  color: var(--fg-muted);
+  opacity: 0.6;
+  transition: opacity 0.2s;
 }
 
-#vwResult:not(:empty) {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.6rem;
+.copy-row-btn:hover {
+  opacity: 1;
 }
 
-/* copy button: hide when no result, animate */
+/* copy button */
 #copyBtn {
+  align-self: flex-end;
   width: 36px;
   height: 36px;
   background: var(--bg-input);
@@ -168,4 +259,371 @@ input:focus {
 #resultContainer.hidden #copyBtn {
   opacity: 0;
   pointer-events: none;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+/* New timezone styles */
+.timezone-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.checkbox-wrapper label {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  color: var(--fg-text);
+  cursor: pointer;
+}
+
+/* PX VW converter specific styles */
+#vwResult {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--fg-primary);
+  background: transparent;
+  border: 2px solid var(--fg-primary);
+  border-radius: 9999px;
+  padding: 0.4rem 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  user-select: all;
+}
+
+/* UAT Credentials Manager Styles */
+.table-header {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  color: var(--fg-text);
+  font-size: 0.875rem;
+}
+
+.credential-row {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.username-col {
+  flex: 1;
+  padding-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.password-col {
+  flex: 1;
+  padding-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+
+.password-mask {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.actions-col {
+  width: 80px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  opacity: 1;
+  color: var(--fg-primary);
+}
+
+.copy-btn {
+  color: var(--fg-muted);
+}
+
+.edit-btn {
+  color: var(--fg-text);
+}
+
+.delete-btn {
+  color: #dc3545;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.toggle-password:hover {
+  opacity: 1;
+}
+
+#addBtn {
+  flex: 1;
+  background: var(--fg-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#addBtn:hover {
+  background: var(--fg-primary-hover);
+}
+
+.edit-mode {
+  background-color: var(--bg-hover);
+}
+
+#credentialsContainer {
+  margin-top: calc(var(--gap) * 1.2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-credentials {
+  text-align: center;
+  padding: 20px 0;
+  color: var(--fg-muted);
+  font-size: 0.875rem;
+}
+
+/* Credentials form styles */
+.add-credential-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--gap) * 1.5);
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  margin-right: var(--gap);
+  display: flex;
+  align-items: center;
+}
+
+.search-box input {
+  padding-right: 36px;
+  width: 100%;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  display: none;
+  color: var(--fg-muted);
+  opacity: 0.7;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.search-clear:hover {
+  opacity: 1;
+  color: var(--fg-primary);
+}
+
+.search-box input:not(:placeholder-shown) + .search-clear {
+  display: block;
+}
+
+.highlight {
+  background-color: rgba(13, 110, 253, 0.2);
+  color: var(--fg-primary);
+  font-weight: 500;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.credential-form {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: calc(var(--gap) * 1.5);
+  margin-bottom: var(--gap);
+  transition: all 0.3s ease;
+}
+
+.credential-form.hidden {
+  display: none;
+}
+
+.credential-form > div {
+  margin-bottom: var(--gap);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--gap) * 1.2);
+}
+
+.form-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--fg-text);
+}
+
+.primary-button {
+  background: var(--fg-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-button:hover {
+  background: var(--fg-primary-hover);
+}
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.icon-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--fg-primary);
+}
+
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Main entry page grid layout */
+.main-title {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: var(--gap);
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--gap);
+  width: 100%;
+}
+
+.tool-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  text-decoration: none;
+  color: var(--fg-text);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+  border-color: var(--fg-primary);
+}
+
+.tool-icon {
+  background: var(--bg-hover);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--fg-primary);
+}
+
+.tool-card h2 {
+  font-size: 1.125rem;
+  margin: 0;
+  margin-bottom: 4px;
+}
+
+.tool-card p {
+  font-size: 0.875rem;
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+/* Form group styles */
+.form-group {
+  margin-bottom: calc(var(--gap) * 1.2);
+}
+
+.form-group label {
+  margin-bottom: 6px;
+  display: block;
+}
+
+.form-group input {
+  margin-bottom: 0;
 }
