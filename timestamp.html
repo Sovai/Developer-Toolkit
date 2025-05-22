@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Timestamp Preview</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="nav-header">
+        <h1>Timestamp Preview</h1>
+        <div class="nav-links">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="pxvw.html" class="nav-link">PX ↔ VW</a>
+          <a href="credentials.html" class="nav-link">Credentials</a>
+          <a href="timestamp.html" class="nav-link active">Timestamp</a>
+        </div>
+      </div>
+      <div>
+        <label for="timestampInput">Enter Timestamps (one per line)</label>
+        <textarea
+          id="timestampInput"
+          placeholder="Enter timestamps (Unix, ISO, etc.)"
+          rows="5"
+        ></textarea>
+      </div>
+
+      <div>
+        <label for="formatSelect">Format</label>
+        <select id="formatSelect">
+          <option value="default">Default (human-readable)</option>
+          <option value="iso">ISO 8601</option>
+          <option value="date">Date only</option>
+          <option value="time">Time only</option>
+          <option value="datetime-day">Date and time with day of week</option>
+          <option value="custom">Custom format</option>
+        </select>
+      </div>
+
+      <div id="customFormatContainer" class="hidden">
+        <label for="customFormatInput">Custom Format</label>
+        <input
+          type="text"
+          id="customFormatInput"
+          placeholder="e.g., YYYY-MM-DD (DAY) HH:mm:ss"
+        />
+      </div>
+
+      <div class="timezone-container">
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="useLocalTimezone" checked />
+          <label for="useLocalTimezone">Use local timezone</label>
+        </div>
+        <div id="customTimezoneContainer" class="hidden">
+          <label for="timezoneSelect">Select Timezone</label>
+          <select id="timezoneSelect">
+            <option value="-12:00">
+              (UTC-12:00) International Date Line West
+            </option>
+            <option value="-11:00">
+              (UTC-11:00) Coordinated Universal Time-11
+            </option>
+            <option value="-10:00">(UTC-10:00) Hawaii</option>
+            <option value="-09:00">(UTC-09:00) Alaska</option>
+            <option value="-08:00">
+              (UTC-08:00) Pacific Time (US & Canada)
+            </option>
+            <option value="-07:00">
+              (UTC-07:00) Mountain Time (US & Canada)
+            </option>
+            <option value="-06:00">
+              (UTC-06:00) Central Time (US & Canada)
+            </option>
+            <option value="-05:00">
+              (UTC-05:00) Eastern Time (US & Canada)
+            </option>
+            <option value="-04:00">(UTC-04:00) Atlantic Time (Canada)</option>
+            <option value="-03:00">(UTC-03:00) Brasilia</option>
+            <option value="-02:00">
+              (UTC-02:00) Coordinated Universal Time-02
+            </option>
+            <option value="-01:00">(UTC-01:00) Cape Verde Is.</option>
+            <option value="+00:00">
+              (UTC+00:00) London, Dublin, Edinburgh
+            </option>
+            <option value="+01:00">
+              (UTC+01:00) Berlin, Paris, Rome, Madrid
+            </option>
+            <option value="+02:00">
+              (UTC+02:00) Athens, Istanbul, Helsinki
+            </option>
+            <option value="+03:00">(UTC+03:00) Moscow, St. Petersburg</option>
+            <option value="+03:30">(UTC+03:30) Tehran</option>
+            <option value="+04:00">(UTC+04:00) Abu Dhabi, Dubai</option>
+            <option value="+04:30">(UTC+04:30) Kabul</option>
+            <option value="+05:00">(UTC+05:00) Islamabad, Karachi</option>
+            <option value="+05:30">(UTC+05:30) Chennai, Kolkata, Mumbai</option>
+            <option value="+05:45">(UTC+05:45) Kathmandu</option>
+            <option value="+06:00">(UTC+06:00) Astana, Dhaka</option>
+            <option value="+06:30">(UTC+06:30) Yangon (Rangoon)</option>
+            <option value="+07:00">(UTC+07:00) Bangkok, Hanoi, Jakarta</option>
+            <option value="+08:00">
+              (UTC+08:00) Beijing, Hong Kong, Singapore
+            </option>
+            <option value="+09:00">(UTC+09:00) Tokyo, Seoul, Osaka</option>
+            <option value="+09:30">(UTC+09:30) Adelaide, Darwin</option>
+            <option value="+10:00">
+              (UTC+10:00) Sydney, Melbourne, Brisbane
+            </option>
+            <option value="+11:00">(UTC+11:00) Vladivostok</option>
+            <option value="+12:00">(UTC+12:00) Auckland, Wellington</option>
+            <option value="+13:00">(UTC+13:00) Nuku'alofa</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="buttonWrapper">
+        <button id="convertBtn">Convert Timestamps</button>
+        <button id="clearBtn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M19 5L5 19M5 5l14 14"
+              color="currentColor"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div id="resultContainer" class="hidden">
+        <div id="resultsTable"></div>
+        <button id="copyBtn" title="Copy all results">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+          >
+            <g
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-width="1.5"
+            >
+              <path
+                d="M20.998 10c-.012-2.175-.108-3.353-.877-4.121C19.243 5 17.828 5 15 5h-3c-2.828 0-4.243 0-5.121.879C6 6.757 6 8.172 6 11v5c0 2.828 0 4.243.879 5.121C7.757 22 9.172 22 12 22h3c2.828 0 4.243 0 5.121-.879C21 20.243 21 18.828 21 16v-1"
+              />
+              <path
+                d="M3 10v6a3 3 0 0 0 3 3M18 5a3 3 0 0 0-3-3h-4C7.229 2 5.343 2 4.172 3.172C3.518 3.825 3.229 4.7 3.102 6"
+              />
+            </g>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <script src="nav.js"></script>
+    <script src="timestamp.js"></script>
+  </body>
+</html>

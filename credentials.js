@@ -117,19 +117,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function deleteCredential(id) {
-    if (confirm("Are you sure you want to delete this credential?")) {
-      const credentials = getCredentialsFromStorage();
-      const updatedCredentials = credentials.filter((cred) => cred.id !== id);
-      saveCredentialsToStorage(updatedCredentials);
+    // Temporarily removing confirm dialog to test if that's causing the issue
+    const credentials = getCredentialsFromStorage();
+    const updatedCredentials = credentials.filter((cred) => cred.id !== id);
+    saveCredentialsToStorage(updatedCredentials);
 
-      // Maintain the search filter if any
-      filterCredentials();
+    // Maintain the search filter if any
+    filterCredentials();
 
-      // If we were editing this credential, clear the form
-      if (editingCredentialId === id) {
-        clearForm();
-      }
+    // If we were editing this credential, clear the form
+    if (editingCredentialId === id) {
+      clearForm();
     }
+
+    // Log to console for debugging
+    console.log("Credential deleted:", id);
   }
   function editCredential(id) {
     const credentials = getCredentialsFromStorage();
@@ -247,9 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
         row.classList.add("edit-mode");
       }
 
-      // Username column with copy button
+      // Username column (clickable to copy)
       const usernameCol = document.createElement("div");
-      usernameCol.className = "username-col";
+      usernameCol.className = "username-col clickable";
+      usernameCol.title = "Click to copy username";
 
       const usernameText = document.createElement("span");
 
@@ -277,23 +280,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
       usernameCol.appendChild(usernameText);
 
-      const copyUsernameBtn = document.createElement("button");
-      copyUsernameBtn.className = "action-btn copy-btn";
-      copyUsernameBtn.title = "Copy username";
-      copyUsernameBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.998 10c-.012-2.175-.108-3.353-.877-4.121C19.243 5 17.828 5 15 5h-3c-2.828 0-4.243 0-5.121.879C6 6.757 6 8.172 6 11v5c0 2.828 0 4.243.879 5.121C7.757 22 9.172 22 12 22h3c2.828 0 4.243 0 5.121-.879C21 20.243 21 18.828 21 16v-1"></path><path d="M3 10v6a3 3 0 0 0 3 3M18 5a3 3 0 0 0-3-3h-4C7.229 2 5.343 2 4.172 3.172C3.518 3.825 3.229 4.7 3.102 6"></path></svg>`;
-      copyUsernameBtn.addEventListener("click", () =>
+      // Add click event to copy the username
+      usernameCol.addEventListener("click", () =>
         copyToClipboard(credential.username)
       );
-      usernameCol.appendChild(copyUsernameBtn);
 
-      // Password column with toggle visibility and copy buttons
+      // Password column with toggle visibility (clickable to copy)
       const passwordCol = document.createElement("div");
       passwordCol.className = "password-col";
+
+      const passwordContainer = document.createElement("div");
+      passwordContainer.className = "password-container clickable";
+      passwordContainer.title = "Click to copy password";
+      passwordCol.appendChild(passwordContainer);
 
       const passwordText = document.createElement("span");
       passwordText.className = "password-mask";
       passwordText.innerHTML = "••••••••";
-      passwordCol.appendChild(passwordText);
+      passwordContainer.appendChild(passwordText);
+
+      // Add click event to copy the password
+      passwordContainer.addEventListener("click", () =>
+        copyToClipboard(credential.password)
+      );
 
       const togglePasswordBtn = document.createElement("button");
       togglePasswordBtn.className = "toggle-password";
@@ -304,18 +313,19 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       passwordCol.appendChild(togglePasswordBtn);
 
-      const copyPasswordBtn = document.createElement("button");
-      copyPasswordBtn.className = "action-btn copy-btn";
-      copyPasswordBtn.title = "Copy password";
-      copyPasswordBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.998 10c-.012-2.175-.108-3.353-.877-4.121C19.243 5 17.828 5 15 5h-3c-2.828 0-4.243 0-5.121.879C6 6.757 6 8.172 6 11v5c0 2.828 0 4.243.879 5.121C7.757 22 9.172 22 12 22h3c2.828 0 4.243 0 5.121-.879C21 20.243 21 18.828 21 16v-1"></path><path d="M3 10v6a3 3 0 0 0 3 3M18 5a3 3 0 0 0-3-3h-4C7.229 2 5.343 2 4.172 3.172C3.518 3.825 3.229 4.7 3.102 6"></path></svg>`;
-      copyPasswordBtn.addEventListener("click", () =>
-        copyToClipboard(credential.password)
-      );
-      passwordCol.appendChild(copyPasswordBtn);
-
       // Actions column
       const actionsCol = document.createElement("div");
       actionsCol.className = "actions-col";
+
+      // Add autofill button
+      const autofillBtn = document.createElement("button");
+      autofillBtn.className = "action-btn autofill-btn";
+      autofillBtn.title = "Autofill in current tab";
+      autofillBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 11 4-7 4 7"/><path d="M9 4v16"/><path d="M5 20h8"/><path d="M16 16h6m-3-3v6"/></svg>`;
+      autofillBtn.addEventListener("click", () =>
+        autofillCredential(credential.username, credential.password)
+      );
+      actionsCol.appendChild(autofillBtn);
 
       const editBtn = document.createElement("button");
       editBtn.className = "action-btn edit-btn";
@@ -328,9 +338,14 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteBtn.className = "action-btn delete-btn";
       deleteBtn.title = "Delete";
       deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>`;
-      deleteBtn.addEventListener("click", () =>
-        deleteCredential(credential.id)
-      );
+
+      // Use more explicit event binding with a variable to hold the ID
+      const credentialIdToDelete = credential.id;
+      deleteBtn.onclick = function () {
+        console.log("Delete button clicked for ID:", credentialIdToDelete);
+        deleteCredential(credentialIdToDelete);
+      };
+
       actionsCol.appendChild(deleteBtn);
 
       // Add all columns to the row
@@ -340,6 +355,120 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Add row to the table
       credentialsTable.appendChild(row);
+    });
+  }
+
+  // Autofill function to fill username and password in active tab
+  function autofillCredential(username, password) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs.length === 0) {
+        alert("No active tab found");
+        return;
+      }
+
+      const activeTab = tabs[0];
+
+      // Inject script to fill the form fields
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: activeTab.id },
+          func: (username, password) => {
+            // Find username input fields by common attributes
+            const usernameFields = document.querySelectorAll(
+              'input[type="text"][name="username"], input[type="email"][name="username"], input[name="email"], input[type="text"][id="username"], input[type="email"][id="username"], input[id="email"], input[name="user"], input[id="user"]'
+            );
+
+            // Find password input fields - include both type="password" and inputs with "password" in name/id even if they're type="text"
+            const passwordFields = document.querySelectorAll(
+              'input[type="password"], input[name="password"], input[id="password"], input[name*="password" i], input[id*="password" i]'
+            );
+
+            let usernameField = null;
+
+            // Try to find username field
+            if (usernameFields.length > 0) {
+              usernameField = usernameFields[0]; // Take the first match
+            } else {
+              // As a fallback, look for any visible input that might be username
+              const visibleTextInputs = Array.from(
+                document.querySelectorAll(
+                  'input[type="text"], input[type="email"]'
+                )
+              ).filter((input) => {
+                const rect = input.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+              });
+              if (visibleTextInputs.length > 0) {
+                usernameField = visibleTextInputs[0];
+              }
+            }
+
+            // Fill username if found
+            if (usernameField) {
+              usernameField.value = username;
+              // Trigger input event for modern frameworks
+              usernameField.dispatchEvent(
+                new Event("input", { bubbles: true })
+              );
+              usernameField.dispatchEvent(
+                new Event("change", { bubbles: true })
+              );
+            }
+
+            // Fill password if found
+            if (passwordFields.length > 0) {
+              const passwordField = passwordFields[0]; // Take the first password field
+              passwordField.value = password;
+              // Trigger input event for modern frameworks
+              passwordField.dispatchEvent(
+                new Event("input", { bubbles: true })
+              );
+              passwordField.dispatchEvent(
+                new Event("change", { bubbles: true })
+              );
+            }
+
+            return {
+              usernameFound: !!usernameField,
+              passwordFound: passwordFields.length > 0,
+            };
+          },
+          args: [username, password],
+        },
+        (results) => {
+          if (chrome.runtime.lastError) {
+            alert(`Error: ${chrome.runtime.lastError.message}`);
+            return;
+          }
+
+          const result = results[0]?.result;
+          if (!result?.usernameFound && !result?.passwordFound) {
+            alert("No login fields found on the page");
+          } else if (!result?.usernameFound) {
+            alert("Username field not found, but password was filled");
+          } else if (!result?.passwordFound) {
+            alert("Password field not found, but username was filled");
+          } else {
+            // Show a temporary feedback
+            const tempDiv = document.createElement("div");
+            tempDiv.textContent = "Autofill complete!";
+            tempDiv.style.position = "fixed";
+            tempDiv.style.top = "10px";
+            tempDiv.style.left = "50%";
+            tempDiv.style.transform = "translateX(-50%)";
+            tempDiv.style.padding = "8px 16px";
+            tempDiv.style.backgroundColor = "var(--fg-primary)";
+            tempDiv.style.color = "white";
+            tempDiv.style.borderRadius = "var(--radius)";
+            tempDiv.style.zIndex = "1000";
+            document.body.appendChild(tempDiv);
+
+            setTimeout(() => {
+              document.body.removeChild(tempDiv);
+            }, 1500);
+          }
+        }
+      );
     });
   }
 });
