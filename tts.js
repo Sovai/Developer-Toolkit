@@ -231,8 +231,12 @@ class NaturalTTS {
     this.isStreamingMode = false;    this.initializeElements();
     this.bindEvents();
     this.resetAudioState(); // Ensure clean audio state
+
+    // Initialize provider UI immediately with default values
+    this.onProviderChange();
+
     this.loadSettings().then(() => {
-      this.onProviderChange(); // Initialize provider UI
+      this.onProviderChange(); // Initialize provider UI after loading settings
     });
 
     // Detect if running in a tab vs popup and show appropriate status
@@ -253,6 +257,7 @@ class NaturalTTS {
       googleAUStandardVoices: document.getElementById('googleAUStandardVoices'),
       googleAUNeural2Voices: document.getElementById('googleAUNeural2Voices'),
       openaiVoices: document.getElementById('openaiVoices'),
+      webSpeechVoices: document.getElementById('webSpeechVoices'),
       selector: document.getElementById('selector'),
       voice: document.getElementById('voice'),
       speed: document.getElementById('speed'),
@@ -556,9 +561,18 @@ class NaturalTTS {
 
   async generateAudio() {
     const currentApiKey = this.currentProvider === 'google' ? this.googleApiKey : this.apiKey;
-    const providerName = this.currentProvider === 'google' ? 'Google Cloud' : 'OpenAI';
+    let providerName = 'Unknown';
 
-    if (!currentApiKey) {
+    if (this.currentProvider === 'google') {
+      providerName = 'Google Cloud';
+    } else if (this.currentProvider === 'openai') {
+      providerName = 'OpenAI';
+    } else if (this.currentProvider === 'webspeech') {
+      providerName = 'Web Speech API';
+    }
+
+    // Only check API key for Google and OpenAI
+    if (this.currentProvider !== 'webspeech' && !currentApiKey) {
       this.showStatus(`Please enter your ${providerName} API key`, 'error');
       return null;
     }
@@ -568,7 +582,30 @@ class NaturalTTS {
       return null;
     }
 
-    // Check if text is too long and needs chunking
+    // Web Speech API doesn't support chunking in the same way, handle long texts differently
+    if (this.currentProvider === 'webspeech') {
+      // For very long texts with Web Speech, we'll split but handle differently
+      if (this.currentText.length > 32000) { // Web Speech has character limits
+        return await this.generateChunkedAudio();
+      }
+
+      this.showLoading(true);
+      this.showStatus(`Generating audio with ${providerName}...`, 'info');
+
+      try {
+        const audioUrl = await this.generateWebSpeechAudio(this.currentText);
+        this.showLoading(false);
+        this.showStatus('Web Speech synthesis ready', 'success');
+        return audioUrl;
+      } catch (error) {
+        console.error('Error generating Web Speech audio:', error);
+        this.showLoading(false);
+        this.showStatus(`Error: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    // Check if text is too long and needs chunking for Google/OpenAI
     const maxChunkSize = this.currentProvider === 'google' ? 5000 : 4000;
     if (this.currentText.length > maxChunkSize) {
       return await this.generateChunkedAudio();
@@ -581,7 +618,7 @@ class NaturalTTS {
       let audioUrl;
       if (this.currentProvider === 'google') {
         audioUrl = await this.generateGoogleAudio(this.currentText);
-      } else {
+      } else if (this.currentProvider === 'openai') {
         audioUrl = await this.generateOpenAIAudio(this.currentText);
       }
 
@@ -689,12 +726,75 @@ class NaturalTTS {
     return audioUrl;
   }
 
+  async generateWebSpeechAudio(text) {
+    return new Promise((resolve, reject) => {
+      // Check if Web Speech API is supported
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Web Speech API is not supported in this browser'));
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Find the selected voice
+      const selectedVoiceName = this.elements.voice.value;
+      const voices = speechSynthesis.getVoices();
+      const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      }
+
+      // Set speech parameters
+      const speed = parseFloat(this.elements.speed.value);
+      utterance.rate = speed;
+      utterance.pitch = 1.0;
+      utterance.volume = parseFloat(this.elements.volume.value);
+
+      // For Web Speech API, we'll create a dummy URL since it speaks directly
+      // without generating an audio file. We'll handle playback differently.
+      utterance.onstart = () => {
+        console.log('Web Speech synthesis started');
+        resolve('webspeech://direct-synthesis');
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Web Speech synthesis error:', event);
+        reject(new Error(`Web Speech synthesis failed: ${event.error}`));
+      };
+
+      utterance.onend = () => {
+        console.log('Web Speech synthesis ended');
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.updateControlButtons();
+        this.showStatus('Web Speech playback completed', 'success');
+      };
+
+      // Store the utterance for pause/resume functionality
+      this.currentUtterance = utterance;
+
+      // Start synthesis
+      speechSynthesis.speak(utterance);
+    });
+  }
+
   async generateChunkedAudio() {
     // Initialize streaming mode
     this.isStreamingMode = true;
     this.audioQueue = [];
     this.currentChunkIndex = 0;
-    const maxChunkSize = this.currentProvider === 'google' ? 5000 : 4000;
+
+    let maxChunkSize;
+    if (this.currentProvider === 'google') {
+      maxChunkSize = 5000;
+    } else if (this.currentProvider === 'openai') {
+      maxChunkSize = 4000;
+    } else if (this.currentProvider === 'webspeech') {
+      maxChunkSize = 32000; // Web Speech can handle longer chunks
+    }
+
     this.chunks = this.splitTextIntoChunks(this.currentText, maxChunkSize);
     this.isGeneratingChunks = true;
 
@@ -725,8 +825,10 @@ class NaturalTTS {
 
       if (this.currentProvider === 'google') {
         audioUrl = await this.generateGoogleAudio(this.chunks[chunkIndex]);
-      } else {
+      } else if (this.currentProvider === 'openai') {
         audioUrl = await this.generateOpenAIAudio(this.chunks[chunkIndex]);
+      } else if (this.currentProvider === 'webspeech') {
+        audioUrl = await this.generateWebSpeechAudio(this.chunks[chunkIndex]);
       }
 
       console.log(`Generated chunk ${chunkIndex + 1}/${this.chunks.length}`);
@@ -909,6 +1011,30 @@ class NaturalTTS {
 
   async play() {
     try {
+      // Handle Web Speech API differently
+      if (this.currentProvider === 'webspeech') {
+        // Check if we're resuming paused speech
+        if (this.isPaused && speechSynthesis.paused) {
+          speechSynthesis.resume();
+          this.isPlaying = true;
+          this.isPaused = false;
+          this.updateControlButtons();
+          this.showStatus('Web Speech resumed', 'info');
+          return;
+        }
+
+        // Generate and start new speech
+        const audioUrl = await this.generateAudio();
+        if (!audioUrl) return;
+
+        this.isPlaying = true;
+        this.updateControlButtons();
+        this.elements.audioControls.style.display = 'block';
+        this.saveState();
+        return;
+      }
+
+      // Handle regular audio providers (Google/OpenAI)
       if (!this.audio || this.audio.src === '') {
         const audioUrl = await this.generateAudio();
         if (!audioUrl) return;
@@ -949,6 +1075,18 @@ class NaturalTTS {
   }
 
   pause() {
+    if (this.currentProvider === 'webspeech' && this.isPlaying) {
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause();
+        this.isPlaying = false;
+        this.isPaused = true;
+        this.updateControlButtons();
+        this.saveState();
+        this.showStatus('Web Speech paused', 'info');
+      }
+      return;
+    }
+
     if (this.audio && this.isPlaying) {
       this.audio.pause();
       this.pausedTime = this.audio.currentTime;
@@ -960,6 +1098,19 @@ class NaturalTTS {
   }
 
   stop() {
+    if (this.currentProvider === 'webspeech') {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.pausedTime = 0;
+        this.updateControlButtons();
+        this.saveState();
+        this.showStatus('Web Speech stopped', 'info');
+      }
+      return;
+    }
+
     if (this.audio) {
       this.audio.pause();
       this.audio.currentTime = 0;
@@ -1231,35 +1382,255 @@ class NaturalTTS {
 
   onProviderChange() {
     this.currentProvider = this.elements.ttsProvider.value;
+    console.log('Provider changed to:', this.currentProvider);
 
     // Show/hide appropriate API key fields
     if (this.currentProvider === 'google') {
-      this.elements.googleApiKeyGroup.style.display = 'block';
-      this.elements.openaiApiKeyGroup.style.display = 'none';
+      if (this.elements.googleApiKeyGroup) this.elements.googleApiKeyGroup.style.display = 'block';
+      if (this.elements.openaiApiKeyGroup) this.elements.openaiApiKeyGroup.style.display = 'none';
 
-      // Show Google voices, hide OpenAI voices
-      this.elements.googleStandardVoices.style.display = 'block';
-      this.elements.googleNeural2Voices.style.display = 'block';
-      this.elements.googleGBStandardVoices.style.display = 'block';
-      this.elements.googleGBNeural2Voices.style.display = 'block';
-      this.elements.googleAUStandardVoices.style.display = 'block';
-      this.elements.googleAUNeural2Voices.style.display = 'block';
-      this.elements.openaiVoices.style.display = 'none';
-    } else {
-      this.elements.googleApiKeyGroup.style.display = 'none';
-      this.elements.openaiApiKeyGroup.style.display = 'block';
+      // Show Google voices, remove others from DOM
+      this.showGoogleVoices();
+      this.hideOpenAIVoices();
+      this.hideWebSpeechVoices();
+      console.log('Google voices shown');
+    } else if (this.currentProvider === 'openai') {
+      if (this.elements.googleApiKeyGroup) this.elements.googleApiKeyGroup.style.display = 'none';
+      if (this.elements.openaiApiKeyGroup) this.elements.openaiApiKeyGroup.style.display = 'block';
 
-      // Show OpenAI voices, hide Google voices
-      this.elements.googleStandardVoices.style.display = 'none';
-      this.elements.googleNeural2Voices.style.display = 'none';
-      this.elements.googleGBStandardVoices.style.display = 'none';
-      this.elements.googleGBNeural2Voices.style.display = 'none';
-      this.elements.googleAUStandardVoices.style.display = 'none';
-      this.elements.googleAUNeural2Voices.style.display = 'none';
-      this.elements.openaiVoices.style.display = 'block';
+      // Show OpenAI voices, remove others from DOM
+      this.hideGoogleVoices();
+      this.showOpenAIVoices();
+      this.hideWebSpeechVoices();
+      console.log('OpenAI voices shown');
+    } else if (this.currentProvider === 'webspeech') {
+      if (this.elements.googleApiKeyGroup) this.elements.googleApiKeyGroup.style.display = 'none';
+      if (this.elements.openaiApiKeyGroup) this.elements.openaiApiKeyGroup.style.display = 'none';
+
+      // Show Web Speech voices, remove others from DOM
+      this.hideGoogleVoices();
+      this.hideOpenAIVoices();
+      this.showWebSpeechVoices();
+      console.log('Web Speech voices shown');
     }
 
     this.saveSettings();
+  }
+
+  showGoogleVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Add Google voice groups if they're not already in the DOM
+    if (!voiceSelect.querySelector('#googleStandardVoices')) {
+      // Create Google Standard Voices
+      const googleStandardVoices = document.createElement('optgroup');
+      googleStandardVoices.label = 'English (US) - Standard';
+      googleStandardVoices.id = 'googleStandardVoices';
+      googleStandardVoices.innerHTML = `
+        <option value="en-US-Standard-A">en-US-Standard-A (Female)</option>
+        <option value="en-US-Standard-B">en-US-Standard-B (Male)</option>
+        <option value="en-US-Standard-C" selected>en-US-Standard-C (Female)</option>
+        <option value="en-US-Standard-D">en-US-Standard-D (Male)</option>
+        <option value="en-US-Standard-E">en-US-Standard-E (Female)</option>
+        <option value="en-US-Standard-F">en-US-Standard-F (Female)</option>
+        <option value="en-US-Standard-G">en-US-Standard-G (Female)</option>
+        <option value="en-US-Standard-H">en-US-Standard-H (Female)</option>
+        <option value="en-US-Standard-I">en-US-Standard-I (Male)</option>
+        <option value="en-US-Standard-J">en-US-Standard-J (Male)</option>
+      `;
+      voiceSelect.appendChild(googleStandardVoices);
+
+      // Create Google Neural2 Voices
+      const googleNeural2Voices = document.createElement('optgroup');
+      googleNeural2Voices.label = 'English (US) - Neural2 (Higher Quality)';
+      googleNeural2Voices.id = 'googleNeural2Voices';
+      googleNeural2Voices.innerHTML = `
+        <option value="en-US-Neural2-A">en-US-Neural2-A (Female)</option>
+        <option value="en-US-Neural2-B">en-US-Neural2-B (Male)</option>
+        <option value="en-US-Neural2-C">en-US-Neural2-C (Female)</option>
+        <option value="en-US-Neural2-D">en-US-Neural2-D (Male)</option>
+        <option value="en-US-Neural2-E">en-US-Neural2-E (Female)</option>
+        <option value="en-US-Neural2-F">en-US-Neural2-F (Female)</option>
+        <option value="en-US-Neural2-G">en-US-Neural2-G (Female)</option>
+        <option value="en-US-Neural2-H">en-US-Neural2-H (Female)</option>
+        <option value="en-US-Neural2-I">en-US-Neural2-I (Male)</option>
+        <option value="en-US-Neural2-J">en-US-Neural2-J (Male)</option>
+      `;
+      voiceSelect.appendChild(googleNeural2Voices);
+
+      // Create Google GB Standard Voices
+      const googleGBStandardVoices = document.createElement('optgroup');
+      googleGBStandardVoices.label = 'English (GB) - Standard';
+      googleGBStandardVoices.id = 'googleGBStandardVoices';
+      googleGBStandardVoices.innerHTML = `
+        <option value="en-GB-Standard-A">en-GB-Standard-A (Female)</option>
+        <option value="en-GB-Standard-B">en-GB-Standard-B (Male)</option>
+        <option value="en-GB-Standard-C">en-GB-Standard-C (Female)</option>
+        <option value="en-GB-Standard-D">en-GB-Standard-D (Male)</option>
+      `;
+      voiceSelect.appendChild(googleGBStandardVoices);
+
+      // Create Google GB Neural2 Voices
+      const googleGBNeural2Voices = document.createElement('optgroup');
+      googleGBNeural2Voices.label = 'English (GB) - Neural2';
+      googleGBNeural2Voices.id = 'googleGBNeural2Voices';
+      googleGBNeural2Voices.innerHTML = `
+        <option value="en-GB-Neural2-A">en-GB-Neural2-A (Female)</option>
+        <option value="en-GB-Neural2-B">en-GB-Neural2-B (Male)</option>
+        <option value="en-GB-Neural2-C">en-GB-Neural2-C (Female)</option>
+        <option value="en-GB-Neural2-D">en-GB-Neural2-D (Male)</option>
+      `;
+      voiceSelect.appendChild(googleGBNeural2Voices);
+
+      // Create Google AU Standard Voices
+      const googleAUStandardVoices = document.createElement('optgroup');
+      googleAUStandardVoices.label = 'English (AU) - Standard';
+      googleAUStandardVoices.id = 'googleAUStandardVoices';
+      googleAUStandardVoices.innerHTML = `
+        <option value="en-AU-Standard-A">en-AU-Standard-A (Female)</option>
+        <option value="en-AU-Standard-B">en-AU-Standard-B (Male)</option>
+        <option value="en-AU-Standard-C">en-AU-Standard-C (Female)</option>
+        <option value="en-AU-Standard-D">en-AU-Standard-D (Male)</option>
+      `;
+      voiceSelect.appendChild(googleAUStandardVoices);
+
+      // Create Google AU Neural2 Voices
+      const googleAUNeural2Voices = document.createElement('optgroup');
+      googleAUNeural2Voices.label = 'English (AU) - Neural2';
+      googleAUNeural2Voices.id = 'googleAUNeural2Voices';
+      googleAUNeural2Voices.innerHTML = `
+        <option value="en-AU-Neural2-A">en-AU-Neural2-A (Female)</option>
+        <option value="en-AU-Neural2-B">en-AU-Neural2-B (Male)</option>
+        <option value="en-AU-Neural2-C">en-AU-Neural2-C (Female)</option>
+        <option value="en-AU-Neural2-D">en-AU-Neural2-D (Male)</option>
+      `;
+      voiceSelect.appendChild(googleAUNeural2Voices);
+
+      // Update element references
+      this.elements.googleStandardVoices = document.getElementById('googleStandardVoices');
+      this.elements.googleNeural2Voices = document.getElementById('googleNeural2Voices');
+      this.elements.googleGBStandardVoices = document.getElementById('googleGBStandardVoices');
+      this.elements.googleGBNeural2Voices = document.getElementById('googleGBNeural2Voices');
+      this.elements.googleAUStandardVoices = document.getElementById('googleAUStandardVoices');
+      this.elements.googleAUNeural2Voices = document.getElementById('googleAUNeural2Voices');
+    }
+  }
+
+  hideGoogleVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Remove Google voice groups from DOM
+    const googleGroups = [
+      'googleStandardVoices',
+      'googleNeural2Voices',
+      'googleGBStandardVoices',
+      'googleGBNeural2Voices',
+      'googleAUStandardVoices',
+      'googleAUNeural2Voices'
+    ];
+
+    googleGroups.forEach(groupId => {
+      const group = voiceSelect.querySelector(`#${groupId}`);
+      if (group) {
+        group.remove();
+      }
+    });
+  }
+
+  showOpenAIVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Add OpenAI voice group if it's not already in the DOM
+    if (!voiceSelect.querySelector('#openaiVoices')) {
+      const openaiVoices = document.createElement('optgroup');
+      openaiVoices.label = 'OpenAI Voices';
+      openaiVoices.id = 'openaiVoices';
+      openaiVoices.innerHTML = `
+        <option value="alloy">Alloy</option>
+        <option value="echo">Echo</option>
+        <option value="fable">Fable</option>
+        <option value="onyx">Onyx</option>
+        <option value="nova">Nova</option>
+        <option value="shimmer">Shimmer</option>
+      `;
+      voiceSelect.appendChild(openaiVoices);
+
+      // Update element reference
+      this.elements.openaiVoices = document.getElementById('openaiVoices');
+    }
+  }
+
+  hideOpenAIVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Remove OpenAI voice group from DOM
+    const openaiGroup = voiceSelect.querySelector('#openaiVoices');
+    if (openaiGroup) {
+      openaiGroup.remove();
+    }
+  }
+
+  showWebSpeechVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Add Web Speech voice group if it's not already in the DOM
+    if (!voiceSelect.querySelector('#webSpeechVoices')) {
+      // Get available voices from the browser
+      const voices = speechSynthesis.getVoices();
+
+      if (voices.length === 0) {
+        // Voices might not be loaded yet, try again after a short delay
+        setTimeout(() => {
+          speechSynthesis.addEventListener('voiceschanged', () => {
+            this.showWebSpeechVoices();
+          }, { once: true });
+        }, 100);
+        return;
+      }
+
+      const webSpeechVoices = document.createElement('optgroup');
+      webSpeechVoices.label = 'Web Speech API Voices (Browser Built-in)';
+      webSpeechVoices.id = 'webSpeechVoices';
+
+      // Filter and organize voices by language
+      const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+      const otherVoices = voices.filter(voice => !voice.lang.startsWith('en'));
+
+      let optionsHTML = '';
+
+      // Add English voices first
+      if (englishVoices.length > 0) {
+        englishVoices.forEach((voice, index) => {
+          const selected = index === 0 ? 'selected' : '';
+          const localService = voice.localService ? ' (Local)' : ' (Remote)';
+          optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}" ${selected}>${voice.name} (${voice.lang})${localService}</option>`;
+        });
+      }
+
+      // Add other language voices
+      if (otherVoices.length > 0) {
+        otherVoices.forEach(voice => {
+          const localService = voice.localService ? ' (Local)' : ' (Remote)';
+          optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}">${voice.name} (${voice.lang})${localService}</option>`;
+        });
+      }
+
+      webSpeechVoices.innerHTML = optionsHTML;
+      voiceSelect.appendChild(webSpeechVoices);
+
+      // Update element reference
+      this.elements.webSpeechVoices = document.getElementById('webSpeechVoices');
+    }
+  }
+
+  hideWebSpeechVoices() {
+    const voiceSelect = this.elements.voice;
+
+    // Remove Web Speech voice group from DOM
+    const webSpeechGroup = voiceSelect.querySelector('#webSpeechVoices');
+    if (webSpeechGroup) {
+      webSpeechGroup.remove();
+    }
   }
 
   onVoiceChange() {
