@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Natural TTS - Wuxiaworld Reader</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="nav-header">
+        <h1 class="main-title">Natural TTS</h1>
+        <div class="nav-links">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="pxvw.html" class="nav-link">PX ↔ VW</a>
+          <a href="credentials.html" class="nav-link">Credentials</a>
+          <a href="timestamp.html" class="nav-link">Timestamp</a>
+          <a href="tts.html" class="nav-link active">TTS</a>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <!-- Settings Toggle Button -->
+        <div class="settings-toggle" id="settingsToggle">
+          <div class="settings-toggle-content">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>Settings & Configuration</span>
+          </div>
+          <svg class="settings-toggle-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+
+        <!-- Collapsible Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+          <div class="instructions">
+            <div class="title">How to use</div>
+            <div class="steps">
+              <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">Enter your OpenAI API key in the field below</div>
+              </div>
+              <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">Navigate to a Wuxiaworld chapter page in another tab</div>
+              </div>
+              <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">Click "Extract Text" to get the chapter content</div>
+              </div>
+              <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">Click "Play" to start the text-to-speech reading</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="apiKey">OpenAI API Key</label>
+            <input
+              type="password"
+              id="apiKey"
+              placeholder="Enter your OpenAI API key"
+            />
+            <div class="form-note">
+              Your API key is stored locally and used only for TTS requests.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="selector">Content Selector (Optional)</label>
+            <input
+              type="text"
+              id="selector"
+              placeholder="e.g., .chapter-content, .fr-view, .prose, or leave empty"
+              value=""
+            />
+            <div class="form-note">
+              CSS selector to target text content on the page. Leave empty for auto-detection of common content areas.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="voice">Voice</label>
+            <select id="voice">
+              <option value="alloy">Alloy</option>
+              <option value="echo">Echo</option>
+              <option value="fable">Fable</option>
+              <option value="onyx">Onyx</option>
+              <option value="nova">Nova</option>
+              <option value="shimmer">Shimmer</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="speed">Speech Speed</label>
+            <select id="speed">
+              <option value="0.75">0.75x (Slow)</option>
+              <option value="1.0" selected>1.0x (Normal)</option>
+              <option value="1.25">1.25x (Fast)</option>
+              <option value="1.5">1.5x (Very Fast)</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button id="extractBtn" class="btn btn-secondary">
+              Extract Text
+            </button>
+            <button id="debugBtn" class="btn btn-secondary">
+              Debug Selectors
+            </button>
+            <button id="openAsTabBtn" class="btn btn-primary" title="Open TTS in a dedicated tab for persistent playback">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 7h-3V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zM6 15V7h8v1H9a1 1 0 0 0-1 1v7H6zm12 1h-8V9h8v7z"/>
+                <path d="M11 12h4v1h-4zm0-2h4v1h-4z"/>
+              </svg>
+              Open as Tab
+            </button>
+          </div>
+
+          <div class="form-group" id="textPreview" style="display: none;">
+            <label for="extractedText">Extracted Text</label>
+            <textarea
+              id="extractedText"
+              rows="6"
+              placeholder="Extracted text will appear here..."
+              readonly
+            ></textarea>
+            <div class="form-note">
+              Preview of the text that will be read aloud. You can edit this if needed.
+            </div>
+          </div>
+        </div>
+
+        <div class="audio-controls" id="audioControls" style="display: none;">
+          <div class="control-buttons">
+            <button id="playBtn" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              Play
+            </button>
+            <button id="pauseBtn" class="btn btn-secondary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+              Pause
+            </button>
+            <button id="stopBtn" class="btn btn-secondary" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h12v12H6z"/>
+              </svg>
+              Stop
+            </button>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div class="time-display">
+              <span id="currentTime">0:00</span>
+              <span id="totalTime">0:00</span>
+            </div>
+          </div>
+
+          <div class="volume-control">
+            <label for="volume">Volume</label>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.8" />
+          </div>
+        </div>
+
+        <div class="status-container">
+          <div id="status" class="status-message"></div>
+          <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <span>Generating audio...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="nav.js"></script>
+    <script src="tts.js"></script>
+  </body>
+</html>

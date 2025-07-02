@@ -114,6 +114,43 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
 }
 
+/* Base button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--fg-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--fg-primary-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--fg-text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--fg-primary);
+}
+
 .buttonWrapper {
   display: flex;
   gap: 10px;
@@ -650,4 +687,455 @@ select:focus {
 
 .form-group input {
   margin-bottom: 0;
+}
+
+/* TTS Specific Styles */
+.form-note {
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* How to use instructions styling */
+.instructions {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: calc(var(--gap) * 1.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.instructions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--fg-primary), #0056b3);
+}
+
+.instructions .title {
+  font-weight: 600;
+  color: var(--fg-text);
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instructions .title::before {
+  content: '💡';
+  font-size: 1rem;
+}
+
+.instructions .steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.instructions .step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #495057;
+}
+
+.instructions .step-number {
+  background: var(--fg-primary);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.instructions .step-text {
+  flex: 1;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin: calc(var(--gap) * 1.5) 0;
+}
+
+/* Music Player Style Audio Controls */
+.audio-controls {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: calc(var(--gap) * 1.5);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.control-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.control-buttons .btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  padding: 0 !important;
+  font-size: 0 !important;
+  gap: 0 !important;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  text-indent: -9999px;
+  cursor: pointer;
+}
+
+.control-buttons .btn svg {
+  width: 18px;
+  height: 18px;
+  z-index: 2;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Hide text content in audio control buttons */
+.control-buttons .btn::before,
+.control-buttons .btn::after {
+  display: none;
+}
+
+.control-buttons .btn * {
+  font-size: 0;
+}
+
+.control-buttons .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.control-buttons .btn:active {
+  transform: translateY(0);
+}
+
+/* Play button - Clean primary style */
+#playBtn {
+  width: 52px !important;
+  height: 52px !important;
+  background: var(--fg-primary) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
+}
+
+#playBtn svg {
+  width: 20px !important;
+  height: 20px !important;
+  margin-left: 1px;
+}
+
+#playBtn:hover {
+  background: var(--fg-primary-hover) !important;
+  box-shadow: 0 4px 16px rgba(13, 110, 253, 0.35);
+}
+
+/* Pause and Stop buttons - Clean secondary style */
+#pauseBtn, #stopBtn {
+  background: var(--bg-input) !important;
+  color: var(--fg-text) !important;
+  border: 1px solid var(--border) !important;
+}
+
+#pauseBtn:hover, #stopBtn:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--fg-primary) !important;
+}
+
+#pauseBtn:disabled, #stopBtn:disabled {
+  background: var(--bg-input) !important;
+  color: var(--fg-muted) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  opacity: 0.5;
+}
+
+#pauseBtn:disabled:hover, #stopBtn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+}
+
+.progress-container {
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.progress-bar:hover {
+  height: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--fg-primary);
+  width: 0%;
+  transition: width 0.1s ease;
+  border-radius: 3px;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--fg-primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transform: translate(50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.progress-bar:hover .progress-fill::after {
+  opacity: 1;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  font-weight: 500;
+  font-family: monospace;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-input);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+
+.volume-control label {
+  font-size: 0.75rem;
+  color: var(--fg-text);
+  margin: 0;
+  min-width: 45px;
+  font-weight: 500;
+}
+
+.volume-control input[type="range"] {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--fg-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--fg-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Button disabled states */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments for TTS */
+@media (max-width: 480px) {
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group .btn {
+    width: 100%;
+  }
+}
+
+/* Settings Panel Styles */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: calc(var(--gap) * 1.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settings-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--fg-primary);
+}
+
+.settings-toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-text);
+}
+
+.settings-toggle-content .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--fg-muted);
+}
+
+.settings-toggle-arrow {
+  width: 16px;
+  height: 16px;
+  color: var(--fg-muted);
+  transition: transform 0.2s ease;
+}
+
+.settings-toggle.expanded .settings-toggle-arrow {
+  transform: rotate(180deg);
+}
+
+.settings-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-input);
+  border-radius: var(--radius);
+  margin-bottom: calc(var(--gap) * 1.5);
+}
+
+.settings-panel.expanded {
+  max-height: 1000px;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+
+/* Status message styles */
+.status-message {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 8px 0;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.status-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.status-success {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.status-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Empty status message should be hidden */
+.status-message:empty {
+  display: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tab mode styles for centered layout */
+body.tab-mode {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+body.tab-mode .container {
+  margin: 0;
+  max-width: 500px;
+  width: 100%;
+}
+
+/* Hide navigation menu in tab mode */
+body.tab-mode .nav-links {
+  display: none;
 }

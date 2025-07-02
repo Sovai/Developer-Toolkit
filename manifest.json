@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Developer Toolkit",
-  "description": "Combined toolkit with timestamp converter, credentials manager, and PX ↔ VW converter.",
+  "description": "Combined toolkit with timestamp converter, credentials manager, PX ↔ VW converter, and Natural TTS for reading Chinese novels.",
   "version": "1.0",
-  "permissions": ["storage", "clipboardWrite", "activeTab", "scripting"],
+  "permissions": ["storage", "clipboardWrite", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["https://api.openai.com/*"],
   "action": {
     "default_popup": "popup-launcher.html",
     "default_icon": {
