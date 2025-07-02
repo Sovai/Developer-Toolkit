@@ -260,6 +260,8 @@ class NaturalTTS {
       debugBtn: document.getElementById('debugBtn'),
       resetBtn: document.getElementById('resetBtn'),
       openAsTabBtn: document.getElementById('openAsTabBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
       extractedText: document.getElementById('extractedText'),
       textPreview: document.getElementById('textPreview'),
       audioControls: document.getElementById('audioControls'),
@@ -287,6 +289,8 @@ class NaturalTTS {
     this.elements.debugBtn.addEventListener('click', () => this.debugSelectors());
     this.elements.resetBtn.addEventListener('click', () => this.resetCache());
     this.elements.openAsTabBtn.addEventListener('click', () => this.openAsTab());
+    this.elements.prevBtn.addEventListener('click', () => this.navigateToChapter('previous'));
+    this.elements.nextBtn.addEventListener('click', () => this.navigateToChapter('next'));
     this.elements.playBtn.addEventListener('click', () => this.play());
     this.elements.pauseBtn.addEventListener('click', () => this.pause());
     this.elements.stopBtn.addEventListener('click', () => this.stop());
@@ -1344,6 +1348,250 @@ class NaturalTTS {
 
     console.log(`Seeked to ${clickPercentage * 100}% (${this.formatTime(newTime)})`);
   }
+
+  async navigateToChapter(direction) {
+    try {
+      this.showStatus(`Looking for ${direction} chapter...`, 'loading');
+
+      // Clear current audio cache
+      this.clearAudioCache();
+
+      // Check if chrome.tabs API is available
+      if (!chrome?.tabs) {
+        this.showStatus('Navigation requires extension context', 'error');
+        return;
+      }
+
+      // Get the current tab to find navigation links
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+      if (!tab) {
+        this.showStatus('Could not access current tab', 'error');
+        return;
+      }
+
+      // Execute script to find navigation links on the current page
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: findNavigationLinks,
+        args: [direction]
+      });
+
+      const navigationData = results[0].result;
+
+      if (!navigationData.success) {
+        this.showStatus(navigationData.error, 'error');
+
+        // Show available links if any
+        if (navigationData.availableLinks && navigationData.availableLinks.length > 0) {
+          console.log('Available chapter links found:', navigationData.availableLinks);
+          this.showStatus(`${navigationData.error}. Check console for available links.`, 'warning');
+        }
+        return;
+      }
+
+      this.showStatus(`Found ${direction} chapter, navigating...`, 'loading');
+
+      // Navigate to the next/previous chapter
+      await chrome.tabs.update(tab.id, { url: navigationData.url });
+
+      // Wait for the page to load
+      await this.waitForPageLoad(tab.id);
+
+      this.showStatus('Page loaded, extracting text...', 'loading');
+
+      // Small delay to ensure page is fully loaded
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Extract text from the new page
+      await this.extractText();
+
+      // Auto-play if text was successfully extracted
+      if (this.currentText && this.currentText.trim()) {
+        this.showStatus(`${direction === 'next' ? 'Next' : 'Previous'} chapter loaded, starting playback...`, 'loading');
+        await this.play();
+      } else {
+        this.showStatus(`Navigated to ${direction} chapter but couldn't extract text. Try clicking Extract Text.`, 'warning');
+      }
+
+    } catch (error) {
+      console.error(`Error navigating to ${direction} chapter:`, error);
+      this.showStatus(`Failed to navigate to ${direction} chapter: ${error.message}`, 'error');
+    }
+  }
+
+  async waitForPageLoad(tabId) {
+    return new Promise((resolve) => {
+      const checkComplete = () => {
+        chrome.tabs.get(tabId, (tab) => {
+          if (tab.status === 'complete') {
+            // Wait a bit more for dynamic content to load
+            setTimeout(resolve, 1000);
+          } else {
+            setTimeout(checkComplete, 100);
+          }
+        });
+      };
+      checkComplete();
+    });
+  }
+}
+
+// Function to find navigation links on the page (executed in content script context)
+function findNavigationLinks(direction) {
+  console.log(`Looking for ${direction} chapter navigation...`);
+
+  // Based on the provided HTML structure, look for specific patterns
+  const navigationSelectors = {
+    next: [
+      // Specific patterns from the provided HTML
+      'a[data-posthog-click-event="ChapterEvents.ClickNextChapter"]',
+      'button:contains("NEXT CHAPTER") a',
+      'a:has(button:contains("NEXT CHAPTER"))',
+      '.MuiButton-root:contains("NEXT CHAPTER")',
+      // Generic next chapter patterns
+      'a[href*="next"]',
+      'a[title*="next" i]',
+      'a.next',
+      'a.next-chapter',
+      'a[class*="next"]',
+      'a[id*="next"]',
+      '.navigation a:last-child',
+      '.nav-next a',
+      '.chapter-nav a:last-child',
+      // Wuxiaworld specific
+      '.chapter-nav .next a',
+      '.chapter-navigation .next a',
+      '.pager .next a',
+      'a[rel="next"]'
+    ],
+    previous: [
+      // Specific patterns from the provided HTML
+      'a[data-posthog-click-event="ChapterEvents.ClickPreviousChapter"]',
+      'a:contains("PREVIOUS CHAPTER")',
+      '.font-set-m13:contains("PREVIOUS CHAPTER")',
+      // Generic previous chapter patterns
+      'a[href*="prev"]',
+      'a[title*="prev" i]',
+      'a.prev',
+      'a.prev-chapter',
+      'a[class*="prev"]',
+      'a[id*="prev"]',
+      '.navigation a:first-child',
+      '.nav-prev a',
+      '.chapter-nav a:first-child',
+      // Wuxiaworld specific
+      '.chapter-nav .prev a',
+      '.chapter-navigation .prev a',
+      '.pager .prev a',
+      'a[rel="prev"]'
+    ]
+  };
+
+  function getCurrentChapterNumber() {
+    // Try to extract chapter number from URL or page
+    const url = window.location.href;
+    const chapterMatch = url.match(/chapter[-\/]?(\d+)/i);
+    if (chapterMatch) {
+      return parseInt(chapterMatch[1]);
+    }
+
+    // Try to find in page title
+    const titleMatch = document.title.match(/chapter\s*(\d+)/i);
+    if (titleMatch) {
+      return parseInt(titleMatch[1]);
+    }
+
+    return 0;
+  }
+
+  const selectors = navigationSelectors[direction];
+  let foundLink = null;
+  let usedSelector = '';
+
+  // Try each selector until we find a valid link
+  for (const selector of selectors) {
+    try {
+      let elements = [];
+
+      // Handle :contains pseudo-selector manually since it's not supported in modern browsers
+      if (selector.includes(':contains(')) {
+        const parts = selector.split(':contains(');
+        const baseSelector = parts[0];
+        const containsText = parts[1].replace(/[)"]/g, '').toLowerCase();
+
+        const candidateElements = document.querySelectorAll(baseSelector || '*');
+        elements = Array.from(candidateElements).filter(el =>
+          el.textContent.toLowerCase().includes(containsText)
+        );
+      } else {
+        elements = Array.from(document.querySelectorAll(selector));
+      }
+
+      for (const element of elements) {
+        const href = element.href;
+        if (href && href !== window.location.href && !href.includes('#')) {
+          // Additional validation for direction
+          const text = element.textContent.toLowerCase().trim();
+          const title = element.title.toLowerCase().trim();
+
+          if (direction === 'next') {
+            if (text.includes('next') || text.includes('→') || text.includes('>') ||
+                title.includes('next') || element.classList.contains('next') ||
+                text.includes('next chapter')) {
+              foundLink = element;
+              usedSelector = selector;
+              break;
+            }
+          } else if (direction === 'previous') {
+            if (text.includes('prev') || text.includes('←') || text.includes('<') ||
+                title.includes('prev') || element.classList.contains('prev') ||
+                text.includes('previous chapter')) {
+              foundLink = element;
+              usedSelector = selector;
+              break;
+            }
+          }
+
+          // If no specific direction indicators, use first valid link found
+          if (!foundLink) {
+            foundLink = element;
+            usedSelector = selector;
+          }
+        }
+      }
+      if (foundLink) break;
+    } catch (error) {
+      console.log(`Error with selector ${selector}:`, error);
+      continue;
+    }
+  }
+
+  if (!foundLink) {
+    // Try to find any navigation links and suggest manual navigation
+    const allLinks = Array.from(document.querySelectorAll('a[href*="chapter"]'))
+      .filter(a => a.href && a.href !== window.location.href)
+      .map(a => ({ text: a.textContent.trim(), href: a.href }))
+      .slice(0, 5);
+
+    return {
+      success: false,
+      error: `No ${direction} chapter link found on this page`,
+      availableLinks: allLinks,
+      currentUrl: window.location.href
+    };
+  }
+
+  console.log(`Found ${direction} chapter link:`, foundLink.href);
+  console.log(`Used selector: ${usedSelector}`);
+
+  return {
+    success: true,
+    url: foundLink.href,
+    text: foundLink.textContent.trim(),
+    title: foundLink.title,
+    usedSelector: usedSelector
+  };
 }
 
 // Initialize the TTS when the page loads
