@@ -232,6 +232,9 @@ class NaturalTTS {
     this.bindEvents();
     this.resetAudioState(); // Ensure clean audio state
 
+    // Initialize Web Speech API voices early
+    this.initializeWebSpeechVoices();
+
     // Initialize provider UI immediately with default values
     this.onProviderChange();
 
@@ -322,6 +325,36 @@ class NaturalTTS {
     window.addEventListener('beforeunload', () => {
       this.saveState();
     });
+  }
+
+  initializeWebSpeechVoices() {
+    // Early initialization of Web Speech API voices
+    // This ensures voices are loaded as soon as possible
+    if ('speechSynthesis' in window) {
+      // Try to get voices immediately
+      let voices = speechSynthesis.getVoices();
+
+      if (voices.length === 0) {
+        // If no voices are available yet, set up event listener
+        const handleVoicesLoaded = () => {
+          console.log('Web Speech voices initialized on startup');
+          speechSynthesis.removeEventListener('voiceschanged', handleVoicesLoaded);
+        };
+
+        speechSynthesis.addEventListener('voiceschanged', handleVoicesLoaded);
+
+        // Also try a timeout approach as backup
+        setTimeout(() => {
+          voices = speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            console.log('Web Speech voices loaded via timeout');
+            speechSynthesis.removeEventListener('voiceschanged', handleVoicesLoaded);
+          }
+        }, 1000);
+      } else {
+        console.log('Web Speech voices already available:', voices.length);
+      }
+    }
   }
 
   async loadSettings() {
@@ -1573,54 +1606,111 @@ class NaturalTTS {
   showWebSpeechVoices() {
     const voiceSelect = this.elements.voice;
 
-    // Add Web Speech voice group if it's not already in the DOM
-    if (!voiceSelect.querySelector('#webSpeechVoices')) {
-      // Get available voices from the browser
-      const voices = speechSynthesis.getVoices();
-
-      if (voices.length === 0) {
-        // Voices might not be loaded yet, try again after a short delay
-        setTimeout(() => {
-          speechSynthesis.addEventListener('voiceschanged', () => {
-            this.showWebSpeechVoices();
-          }, { once: true });
-        }, 100);
-        return;
-      }
-
-      const webSpeechVoices = document.createElement('optgroup');
-      webSpeechVoices.label = 'Web Speech API Voices (Browser Built-in)';
-      webSpeechVoices.id = 'webSpeechVoices';
-
-      // Filter and organize voices by language
-      const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
-      const otherVoices = voices.filter(voice => !voice.lang.startsWith('en'));
-
-      let optionsHTML = '';
-
-      // Add English voices first
-      if (englishVoices.length > 0) {
-        englishVoices.forEach((voice, index) => {
-          const selected = index === 0 ? 'selected' : '';
-          const localService = voice.localService ? ' (Local)' : ' (Remote)';
-          optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}" ${selected}>${voice.name} (${voice.lang})${localService}</option>`;
-        });
-      }
-
-      // Add other language voices
-      if (otherVoices.length > 0) {
-        otherVoices.forEach(voice => {
-          const localService = voice.localService ? ' (Local)' : ' (Remote)';
-          optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}">${voice.name} (${voice.lang})${localService}</option>`;
-        });
-      }
-
-      webSpeechVoices.innerHTML = optionsHTML;
-      voiceSelect.appendChild(webSpeechVoices);
-
-      // Update element reference
-      this.elements.webSpeechVoices = document.getElementById('webSpeechVoices');
+    // Remove existing Web Speech group if present
+    const existingGroup = voiceSelect.querySelector('#webSpeechVoices');
+    if (existingGroup) {
+      existingGroup.remove();
     }
+
+    // Get available voices from the browser
+    const voices = speechSynthesis.getVoices();
+    console.log('Available Web Speech voices:', voices.length);
+
+    if (voices.length === 0) {
+      // Voices might not be loaded yet, set up event listener
+      console.log('No voices available yet, waiting for voiceschanged event');
+
+      // Create a placeholder group
+      const placeholderGroup = document.createElement('optgroup');
+      placeholderGroup.label = 'Web Speech API Voices (Loading...)';
+      placeholderGroup.id = 'webSpeechVoices';
+      placeholderGroup.innerHTML = '<option value="">Loading voices...</option>';
+      voiceSelect.appendChild(placeholderGroup);
+
+      // Set up event listener for when voices become available
+      const handleVoicesChanged = () => {
+        console.log('Voices changed event fired');
+        speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        // Small delay to ensure voices are fully loaded
+        setTimeout(() => this.showWebSpeechVoices(), 50);
+      };
+
+      speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+
+      // Fallback: try again after a delay in case the event doesn't fire
+      setTimeout(() => {
+        const voicesAfterTimeout = speechSynthesis.getVoices();
+        if (voicesAfterTimeout.length > 0) {
+          console.log('Voices loaded after timeout, populating...');
+          speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          this.showWebSpeechVoices();
+        }
+      }, 1000);
+
+      return;
+    }
+
+    // Create the Web Speech voices group
+    const webSpeechVoices = document.createElement('optgroup');
+    webSpeechVoices.label = `Web Speech API Voices (${voices.length} available)`;
+    webSpeechVoices.id = 'webSpeechVoices';
+
+    // Filter and organize voices by language
+    const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
+    const otherVoices = voices.filter(voice => !voice.lang.startsWith('en'));
+
+    let optionsHTML = '';
+
+    // Add English voices first
+    if (englishVoices.length > 0) {
+      englishVoices.forEach((voice, index) => {
+        const selected = index === 0 ? 'selected' : '';
+        const localService = voice.localService ? ' (Local)' : ' (Remote)';
+        const gender = this.guessVoiceGender(voice.name);
+        optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}" ${selected}>${voice.name} (${voice.lang})${gender}${localService}</option>`;
+      });
+    }
+
+    // Add separator if both English and other voices exist
+    if (englishVoices.length > 0 && otherVoices.length > 0) {
+      optionsHTML += '<option disabled>────────────────</option>';
+    }
+
+    // Add other language voices
+    if (otherVoices.length > 0) {
+      otherVoices.forEach(voice => {
+        const localService = voice.localService ? ' (Local)' : ' (Remote)';
+        const gender = this.guessVoiceGender(voice.name);
+        optionsHTML += `<option value="${voice.name}" data-lang="${voice.lang}">${voice.name} (${voice.lang})${gender}${localService}</option>`;
+      });
+    }
+
+    // If no voices are available, show a message
+    if (optionsHTML === '') {
+      optionsHTML = '<option value="">No voices available</option>';
+    }
+
+    webSpeechVoices.innerHTML = optionsHTML;
+    voiceSelect.appendChild(webSpeechVoices);
+
+    // Update element reference
+    this.elements.webSpeechVoices = document.getElementById('webSpeechVoices');
+
+    console.log('Web Speech voices populated:', englishVoices.length + otherVoices.length);
+  }
+
+  guessVoiceGender(voiceName) {
+    // Simple heuristic to guess gender from voice name
+    const name = voiceName.toLowerCase();
+    const femaleIndicators = ['female', 'woman', 'girl', 'she', 'her', 'allison', 'alex', 'victoria', 'samantha', 'susan', 'karen', 'tessa', 'moira', 'fiona', 'veena', 'rishi'];
+    const maleIndicators = ['male', 'man', 'boy', 'he', 'him', 'daniel', 'thomas', 'fred', 'jorge', 'aaron', 'arthur', 'albert', 'alex'];
+
+    if (femaleIndicators.some(indicator => name.includes(indicator))) {
+      return ' (Female)';
+    } else if (maleIndicators.some(indicator => name.includes(indicator))) {
+      return ' (Male)';
+    }
+    return '';
   }
 
   hideWebSpeechVoices() {
