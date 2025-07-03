@@ -697,76 +697,6 @@ select:focus {
   line-height: 1.4;
 }
 
-/* How to use instructions styling */
-.instructions {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 1px solid #dee2e6;
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: calc(var(--gap) * 1.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.instructions::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(to bottom, var(--fg-primary), #0056b3);
-}
-
-.instructions .title {
-  font-weight: 600;
-  color: var(--fg-text);
-  margin-bottom: 12px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.instructions .title::before {
-  content: '💡';
-  font-size: 1rem;
-}
-
-.instructions .steps {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-left: 12px;
-}
-
-.instructions .step {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: #495057;
-}
-
-.instructions .step-number {
-  background: var(--fg-primary);
-  color: white;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.instructions .step-text {
-  flex: 1;
-}
 
 .button-group {
   display: flex;
@@ -783,6 +713,28 @@ select:focus {
   border: 1px solid var(--border);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   position: relative;
+}
+
+.player-title {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.player-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg-text);
+  line-height: 1.4;
+  max-height: 3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .control-buttons {

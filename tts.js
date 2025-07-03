@@ -281,7 +281,8 @@ class NaturalTTS {
       currentTime: document.getElementById('currentTime'),
       totalTime: document.getElementById('totalTime'),
       status: document.getElementById('status'),
-      loadingSpinner: document.getElementById('loadingSpinner')
+      loadingSpinner: document.getElementById('loadingSpinner'),
+      pageTitle: document.getElementById('pageTitle')
     };
   }
 
@@ -415,6 +416,7 @@ class NaturalTTS {
         this.elements.extractedText.value = result.tts_currentText;
         this.elements.textPreview.style.display = 'block';
         this.elements.audioControls.style.display = 'block';
+        this.updatePageTitle(); // Update title when showing controls
         this.elements.extractedText.removeAttribute('readonly');
       }
 
@@ -551,6 +553,7 @@ class NaturalTTS {
 
           // Show audio controls when text is available
           this.elements.audioControls.style.display = 'block';
+          this.updatePageTitle(); // Update title when showing controls
           this.updateControlButtons();
 
           // Save state after successful extraction
@@ -1063,6 +1066,7 @@ class NaturalTTS {
         this.isPlaying = true;
         this.updateControlButtons();
         this.elements.audioControls.style.display = 'block';
+        this.updatePageTitle(); // Update title when showing controls
         this.saveState();
         return;
       }
@@ -1084,6 +1088,7 @@ class NaturalTTS {
           this.isPlaying = true;
           this.updateControlButtons();
           this.elements.audioControls.style.display = 'block';
+          this.updatePageTitle(); // Update title when showing controls
           this.audio.volume = this.elements.volume.value;
           this.saveState(); // Save state when playing
         }
@@ -1098,6 +1103,7 @@ class NaturalTTS {
         this.isPlaying = true;
         this.updateControlButtons();
         this.elements.audioControls.style.display = 'block';
+        this.updatePageTitle(); // Update title when showing controls
         this.audio.volume = this.elements.volume.value;
         this.saveState(); // Save state when resuming
       }
@@ -1235,6 +1241,28 @@ class NaturalTTS {
 
   showLoading(show) {
     this.elements.loadingSpinner.style.display = show ? 'flex' : 'none';
+  }
+
+  updatePageTitle() {
+    if (this.elements.pageTitle) {
+      // Get the title from the source tab if available, otherwise use current document title
+      if (this.sourceTabId && typeof chrome !== 'undefined' && chrome.tabs) {
+        // If we have a source tab, try to get its title
+        chrome.tabs.get(this.sourceTabId, (tab) => {
+          if (chrome.runtime.lastError) {
+            // If we can't access the tab, fall back to document title
+            this.elements.pageTitle.textContent = document.title || 'Natural TTS Player';
+          } else if (tab && tab.title) {
+            this.elements.pageTitle.textContent = tab.title;
+          } else {
+            this.elements.pageTitle.textContent = document.title || 'Unknown Page';
+          }
+        });
+      } else {
+        // Use current document title
+        this.elements.pageTitle.textContent = document.title || 'Natural TTS Player';
+      }
+    }
   }
 
   async debugSelectors() {
