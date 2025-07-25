@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
-    <title>PX ↔ VW Converter</title>
+    <title>CSS Unit Converter & Tailwind Reference</title>
   </head>
   <body>
     <div class="container">
       <div class="nav-header">
-        <h1>PX ↔ VW Converter</h1>
+        <h1 id="pageTitle">REM ↔ PX Converter</h1>
         <div class="nav-links">
           <a href="index.html" class="nav-link">Home</a>
           <a href="pxvw.html" class="nav-link active">PX ↔ VW</a>
@@ -19,23 +19,47 @@
         </div>
       </div>
 
+      <div class="mode-selector">
+        <button id="pxvwModeBtn" class="mode-btn">PX ↔ VW</button>
+        <button id="rempxModeBtn" class="mode-btn active">REM ↔ PX</button>
+        <button id="tailwindModeBtn" class="mode-btn">Tailwind</button>
+      </div>
+
       <div>
         <label id="valueLabel" for="valueInput">Pixels (px)</label>
         <input type="number" id="valueInput" placeholder="Pixels (px)" />
       </div>
 
-      <div>
-        <label for="vwBaseInput">Viewport Width (px)</label>
+      <div id="baseInputContainer">
+        <label id="baseLabel" for="baseInput">Base Font Size (px)</label>
         <input
           type="number"
-          id="vwBaseInput"
-          placeholder="Viewport width (px)"
+          id="baseInput"
+          placeholder="Base font size (default: 16px)"
+          value="16"
         />
       </div>
-      <div class="buttonWrapper">
-        <button id="convertBtn">Convert to VW</button>
 
-        <button id="toggleBtn" title="Toggle mode">
+      <!-- Tailwind Reference Container -->
+      <div id="tailwindContainer" class="hidden">
+        <div class="search-container">
+          <input type="text" id="tailwindSearch" placeholder="Search Tailwind classes or pixel values..." />
+        </div>
+
+        <div class="tailwind-categories">
+          <button id="spacingTabBtn" class="category-btn active">Spacing</button>
+          <button id="fontTabBtn" class="category-btn">Font Size</button>
+        </div>
+
+        <div id="tailwindResults" class="tailwind-results">
+          <!-- Results will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <div class="buttonWrapper">
+        <button id="convertBtn">Convert to REM</button>
+
+        <button id="toggleBtn" title="Toggle conversion direction">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="32"
@@ -74,7 +98,7 @@
         </button>
       </div>
       <div id="resultContainer" class="hidden">
-        <span id="vwResult"></span>
+        <span id="result"></span>
         <button id="copyBtn" title="Copy to clipboard">
           <svg
             xmlns="http://www.w3.org/2000/svg"
